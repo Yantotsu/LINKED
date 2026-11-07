@@ -22,6 +22,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Install Android SDK components
         run: |
@@ -33,7 +35,7 @@ jobs:
             exit 1
           fi
 
-          yes | "$SDKMANAGER" --licenses
+          yes | "$SDKMANAGER" --licenses || true
 
           "$SDKMANAGER" --install \
             "platform-tools" \
@@ -45,6 +47,15 @@ jobs:
 
       - name: Build APK
         run: ./gradlew :android:assembleDebug
+
+      - name: Inspect APK native libraries
+        run: |
+          APK="android/build/outputs/apk/debug/android-debug.apk"
+          if [ ! -f "$APK" ]; then
+            find android/build/outputs/apk -type f
+            exit 1
+          fi
+          unzip -l "$APK" | grep -E 'lib/.*libgdx.so'
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
