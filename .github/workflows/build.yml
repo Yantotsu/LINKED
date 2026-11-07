@@ -78,6 +78,26 @@ jobs:
       - name: Generate Gradle Wrapper 8.9
         run: gradle wrapper --gradle-version 8.9
 
+
+      - name: Diagnose LibGDX Native Dependencies
+        run: |
+          echo "===== RESOLVED NATIVE DEPENDENCIES ====="
+          ./gradlew :android:dependencies \
+            --configuration debugRuntimeClasspath
+
+          echo "===== SEARCH NATIVE JARS ====="
+          find ~/.gradle/caches/modules-2/files-2.1/com.badlogicgames.gdx \
+            -type f -name "*.jar" -print
+
+          echo "===== INSPECT NATIVE JAR CONTENTS ====="
+          find ~/.gradle/caches/modules-2/files-2.1/com.badlogicgames.gdx \
+            -type f -name "*natives*.jar" -print0 |
+          while IFS= read -r -d '' JAR; do
+            echo "JAR: $JAR"
+            unzip -l "$JAR" | grep -E 'libgdx.so|arm64-v8a|armeabi-v7a' || true
+          done
+
+
       # 7. Build Android APK
       - name: Build LINKED Debug APK
         run: ./gradlew :android:assembleDebug --stacktrace
