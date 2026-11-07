@@ -30,6 +30,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -38,10 +44,12 @@ dependencies {
     implementation("com.badlogicgames.gdx:gdx:1.13.1")
     implementation("com.badlogicgames.gdx:gdx-backend-android:1.13.1")
 
-    runtimeOnly(
-        "com.badlogicgames.gdx:gdx-platform:1.13.1:natives-armeabi-v7a"
-    )
-    runtimeOnly(
+    // Native libraries for Android
+    implementation(
         "com.badlogicgames.gdx:gdx-platform:1.13.1:natives-arm64-v8a"
+    )
+
+    implementation(
+        "com.badlogicgames.gdx:gdx-platform:1.13.1:natives-armeabi-v7a"
     )
 }
