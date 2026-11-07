@@ -1,37 +1,53 @@
 
-name: LINKED Android Build
+# ==========================================
+# LINKED! Android Build Workflow
+# Game Version: 0.1.0
+# Build: Debug APK
+# ==========================================
+
+name: LINKED Android Build v0.1.0
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    name: Build LINKED! Android APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # 1. Checkout Repository
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Java
+      # 2. Setup Java
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
+      # 3. Setup Gradle
+      - name: Setup Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Install Android SDK components
+      # 4. Install Android SDK
+      - name: Install Android SDK
         run: |
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
             -name sdkmanager -type f | head -n 1)
 
           if [ -z "$SDKMANAGER" ]; then
-            echo "sdkmanager not found"
+            echo "ERROR: Android SDK Manager not found"
             exit 1
           fi
 
@@ -42,23 +58,72 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Generate Gradle Wrapper
+      # 5. Display Build Environment
+      - name: Build Environment Information
+        run: |
+          echo "================================"
+          echo "LINKED! BUILD INFORMATION"
+          echo "================================"
+          java -version
+          gradle --version
+          echo "Android SDK: API 35"
+          echo "Build Tools: 35.0.0"
+          echo "Gradle: 8.9"
+          echo "Java: 17"
+          echo "LibGDX: 1.13.1"
+          echo "Game Version: 0.1.0"
+          echo "================================"
+
+      # 6. Generate Gradle Wrapper
+      - name: Generate Gradle Wrapper 8.9
         run: gradle wrapper --gradle-version 8.9
 
-      - name: Build APK
-        run: ./gradlew :android:assembleDebug
+      # 7. Build Android APK
+      - name: Build LINKED Debug APK
+        run: ./gradlew :android:assembleDebug --stacktrace
 
-      - name: Inspect APK native libraries
+      # 8. Inspect APK
+      - name: Inspect APK and Native Libraries
         run: |
-          APK="android/build/outputs/apk/debug/android-debug.apk"
-          if [ ! -f "$APK" ]; then
-            find android/build/outputs/apk -type f
+          echo "================================"
+          echo "SEARCHING APK FILES"
+          echo "================================"
+
+          find android/build/outputs -type f -name "*.apk" -print
+
+          APK=$(find android/build/outputs -type f \
+            -name "*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: APK NOT FOUND"
             exit 1
           fi
-          unzip -l "$APK" | grep -E 'lib/.*libgdx.so'
 
-      - name: Upload APK
+          echo "APK: $APK"
+
+          echo "================================"
+          echo "APK CONTENTS"
+          echo "================================"
+
+          unzip -l "$APK" | head -n 100
+
+          echo "================================"
+          echo "LIBGDX NATIVE LIBRARIES"
+          echo "================================"
+
+          unzip -l "$APK" | grep -i "libgdx.so" || true
+
+          echo "================================"
+          echo "ARM64 CHECK"
+          echo "================================"
+
+          unzip -l "$APK" | grep "lib/arm64-v8a/" || true
+
+      # 9. Upload APK Artifact
+      - name: Upload LINKED APK
         uses: actions/upload-artifact@v4
         with:
-          name: LINKED-APK
+          name: LINKED-Android-v0.1.0
           path: android/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
